@@ -1,0 +1,33 @@
+cpu
+cpu
+Training samples: 20000
+Validation samples: 5000
+Test samples: 25000     
+Vocabulary size: 955    
+Training RNN...
+c:\Users\anlam\OneDrive\Desktop\AI_PROJECT\AI_Project_IMDB\NaiveBayes\RNN.py:106: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  return torch.tensor(self.texts[idx]), torch.tensor(self.labels[idx])
+Epoch:    0 / 10 | Training Loss: 164.45803, Validation Loss: 32.73606
+Epoch:    2 / 10 | Training Loss: 102.47885, Validation Loss: 28.72308
+Epoch:    4 / 10 | Training Loss: 76.53272, Validation Loss: 30.31154
+Epoch:    6 / 10 | Training Loss: 51.84893, Validation Loss: 31.30217
+Epoch:    8 / 10 | Training Loss: 29.06599, Validation Loss: 35.54264
+Training GRU...
+c:\Users\anlam\OneDrive\Desktop\AI_PROJECT\AI_Project_IMDB\NaiveBayes\RNN.py:106: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  return torch.tensor(self.texts[idx]), torch.tensor(self.labels[idx])
+Epoch:    0 / 10 | Training Loss: 155.78530, Validation Loss: 30.41802
+Epoch:    2 / 10 | Training Loss: 81.56101, Validation Loss: 28.66211
+Epoch:    4 / 10 | Training Loss: 42.58857, Validation Loss: 38.59015
+Epoch:    6 / 10 | Training Loss: 11.54743, Validation Loss: 56.28524
+Epoch:    8 / 10 | Training Loss: 5.88370, Validation Loss: 69.25617
+Training LSTM...
+c:\Users\anlam\OneDrive\Desktop\AI_PROJECT\AI_Project_IMDB\NaiveBayes\RNN.py:106: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  return torch.tensor(self.texts[idx]), torch.tensor(self.labels[idx])
+Epoch:    0 / 10 | Training Loss: 155.47545, Validation Loss: 32.04157
+Epoch:    2 / 10 | Training Loss: 77.85037, Validation Loss: 28.94105
+Epoch:    4 / 10 | Training Loss: 36.44361, Validation Loss: 39.11787
+Epoch:    6 / 10 | Training Loss: 14.38555, Validation Loss: 48.93268
+Epoch:    8 / 10 | Training Loss: 7.20283, Validation Loss: 59.62413
+RNN: Accuracy=0.8348, Precision=0.8357, Recall=0.8335, F1=0.8346
+GRU: Accuracy=0.8421, Precision=0.8493, Recall=0.8317, F1=0.8404
+LSTM: Accuracy=0.8394, Precision=0.8201, Recall=0.8696, F1=0.8441
