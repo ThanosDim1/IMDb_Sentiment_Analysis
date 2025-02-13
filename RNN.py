@@ -60,9 +60,9 @@ custom_vocab['UNK'] = len(custom_vocab)
 avg_length = int(np.mean([len(re.sub(r'[^a-zA-Z]', ' ', text.lower()).split()) for text in X_train]))
 
 # Convert text data into binary bag-of-words representation
-X_train_binary = torch.tensor(vectorizer.transform(X_train).toarray(), dtype=torch.float32)
-X_val_binary = torch.tensor(vectorizer.transform(X_val).toarray(), dtype=torch.float32)
-X_test_binary = torch.tensor(vectorizer.transform(x_test).toarray(), dtype=torch.float32)
+X_train_binary = torch.tensor(vectorizer.transform(X_train).toarray(), dtype=torch.float64)
+X_val_binary = torch.tensor(vectorizer.transform(X_val).toarray(), dtype=torch.float64)
+X_test_binary = torch.tensor(vectorizer.transform(x_test).toarray(), dtype=torch.float64)
 y_train = torch.tensor(y_train, dtype=torch.long)
 y_val = torch.tensor(y_val, dtype=torch.long)
 y_test = torch.tensor(y_test, dtype=torch.long)
@@ -72,9 +72,9 @@ train_dataset = TensorDataset(X_train_binary, y_train)
 val_dataset = TensorDataset(X_val_binary, y_val)
 test_dataset = TensorDataset(X_test_binary, y_test)
 
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
-test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=64, shuffle=False)
+test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
 # Print dataset info
 print(f'Training samples: {len(train_dataset)}')
@@ -108,9 +108,9 @@ class TextDataset(Dataset):
 train_dataset = TextDataset(X_train, y_train, custom_vocab, avg_length)
 val_dataset = TextDataset(X_val, y_val, custom_vocab, avg_length)
 test_dataset = TextDataset(x_test, y_test, custom_vocab, avg_length)
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-val_loader = DataLoader(val_dataset, batch_size=32)
-test_loader = DataLoader(test_dataset, batch_size=32)
+train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=64)
+test_loader = DataLoader(test_dataset, batch_size=64)
 
 
 # Define RNN, GRU, and LSTM models with optional Global Max Pooling
@@ -118,25 +118,45 @@ class RNNModel(nn.Module):
     def __init__(self, vocab_size,
                  embed_dim, hidden_dim, output_dim,
                  model_type='RNN',
-                 pretrained=True, freeze=False, use_pooling=False):
+                 pretrained=True, freeze=False,
+                 use_pooling=True,  # Global max pooling is enabled
+                 num_layers=2, bidirectional=True):
         super(RNNModel, self).__init__()
         self.use_pooling = use_pooling
-        if pretrained:
-            self.embedding = nn.Embedding(vocab_size, embed_dim)  # Initialize embeddings randomly
-        else:
-            self.embedding = nn.Embedding(vocab_size, embed_dim)
+        self.bidirectional = bidirectional
+        self.hidden_dim = hidden_dim
+
+        # Initialize embeddings (pretrained handling can be added if needed)
+        self.embedding = nn.Embedding(vocab_size, embed_dim)
+
+        # Select the RNN variant (RNN, GRU, or LSTM)
         rnn_class = {'RNN': nn.RNN, 'GRU': nn.GRU, 'LSTM': nn.LSTM}[model_type]
-        self.rnn = rnn_class(embed_dim, hidden_dim, batch_first=True)
-        self.fc = nn.Linear(hidden_dim, output_dim)
+        self.rnn = rnn_class(
+            input_size=embed_dim,
+            hidden_size=hidden_dim,
+            num_layers=num_layers,
+            batch_first=True,
+            bidirectional=bidirectional
+        )
+
+        # Adjust the input dimension for the fully connected layer if bidirectional
+        fc_input_dim = hidden_dim * 2 if bidirectional else hidden_dim
+        self.fc = nn.Linear(fc_input_dim, output_dim)
 
     def forward(self, x):
-        embedded = self.embedding(x)
-        output, _ = self.rnn(embedded)
+        # x shape: (batch_size, seq_length)
+        embedded = self.embedding(x)  # shape: (batch_size, seq_length, embed_dim)
+        output, _ = self.rnn(embedded)  # output shape: (batch_size, seq_length, hidden_dim*(2 if bidirectional else 1))
+
         if self.use_pooling:
-            pooled = torch.max(output, dim=1)[0]
+            # Global max pooling over the sequence length dimension
+            pooled = torch.max(output, dim=1)[0]  # shape: (batch_size, hidden_dim*(2 if bidirectional else 1))
             return torch.sigmoid(self.fc(pooled))
         else:
+            # If not using pooling, one might use the last time step (not used here)
             return torch.sigmoid(self.fc(output[:, -1, :]))
+
+
         
 
         # Training and Evaluation Functions remain unchanged
@@ -194,10 +214,13 @@ def evaluate_model(model, test_loader):
 
 # Instantiate models and train
 models = {
-    'RNN': RNNModel(len(custom_vocab), 300, 32, 1, 'RNN'),
-    'GRU': RNNModel(len(custom_vocab), 300, 32, 1, 'GRU', use_pooling=True),
-    'LSTM': RNNModel(len(custom_vocab), 300, 32, 1, 'LSTM', use_pooling=True)
-    }
+    'RNN': RNNModel(len(custom_vocab), 300, 64, 1, 'RNN',
+                    use_pooling=True, num_layers=2, bidirectional=True),
+    'GRU': RNNModel(len(custom_vocab), 300, 64, 1, 'GRU',
+                    use_pooling=True, num_layers=2, bidirectional=True),
+    'LSTM': RNNModel(len(custom_vocab), 300, 64, 1, 'LSTM',
+                     use_pooling=True, num_layers=2, bidirectional=True)
+}
     
 
 results = {}
